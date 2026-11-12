@@ -39,6 +39,7 @@ export function TaskList() {
   const [filter, setFilter] = useState<TaskFilter>("all");
   const [storageError, setStorageError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const taskToAnimate = useRef<string | null>(null);
 
   useEffect(() => {
     try {
@@ -67,10 +68,26 @@ export function TaskList() {
 
     const task: Task = { id: crypto.randomUUID(), title, completed: false };
     if (updateTasks([task, ...tasks])) {
+      taskToAnimate.current = task.id;
       setDraft("");
       if (filter === "completed") setFilter("active");
       inputRef.current?.focus();
     }
+  }
+
+  function animateNewTask(row: HTMLLIElement | null, taskId: string) {
+    if (!row || taskToAnimate.current !== taskId) return;
+
+    taskToAnimate.current = null;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    row.animate(
+      [
+        { opacity: 0, transform: "translateY(-8px)" },
+        { opacity: 1, transform: "translateY(0)" },
+      ],
+      { duration: 260, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
+    );
   }
 
   function setTaskCompleted(taskId: string, completed: boolean) {
@@ -101,6 +118,7 @@ export function TaskList() {
     active: (tasks?.length ?? 0) - completedCount,
     completed: completedCount,
   };
+  const completionRatio = counts.all > 0 ? completedCount / counts.all : 0;
   const visibleTasks = tasks?.filter((task) => {
     if (filter === "all") return true;
     return task.completed === (filter === "completed");
@@ -114,12 +132,18 @@ export function TaskList() {
         <p className="completion-count" aria-live="polite" aria-atomic="true">
           Выполнено <span>{tasks ? `${completedCount} из ${counts.all}` : "—"}</span>
         </p>
-        <progress
-          className="completion-rule"
-          aria-label="Выполнение задач"
-          max={Math.max(counts.all, 1)}
-          value={completedCount}
-        />
+        <div className="completion-rule">
+          <progress
+            aria-label="Выполнение задач"
+            max={Math.max(counts.all, 1)}
+            value={completedCount}
+          />
+          <span
+            aria-hidden="true"
+            className="completion-fill"
+            style={{ transform: `scaleX(${completionRatio})` }}
+          />
+        </div>
       </header>
 
       <section className="task-panel" aria-label="Задачи">
@@ -186,7 +210,11 @@ export function TaskList() {
             {visibleTasks.map((task) => {
               const checkboxId = `task-${task.id}`;
               return (
-                <li key={task.id} className="task-row">
+                <li
+                  key={task.id}
+                  className="task-row"
+                  ref={(row) => animateNewTask(row, task.id)}
+                >
                   <Checkbox
                     className="task-checkbox"
                     id={checkboxId}
