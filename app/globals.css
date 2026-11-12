@@ -243,12 +243,15 @@ body {
 }
 
 .task-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) var(--control-size);
-  align-items: center;
-  gap: var(--space-md);
-  min-height: 60px;
   padding-inline: var(--panel-gutter);
+}
+
+.task-row-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) repeat(2, var(--control-size));
+  grid-template-rows: minmax(60px, auto);
+  align-items: center;
+  column-gap: var(--space-md);
 }
 
 .task-row + .task-row {
@@ -276,9 +279,17 @@ body {
   text-decoration: line-through;
 }
 
-.delete-button {
+.delete-button,
+.schedule-button,
+.timer-button {
   width: var(--control-size);
+  min-height: var(--control-size);
   color: var(--muted-foreground);
+}
+
+.schedule-button[aria-expanded="true"] {
+  background: var(--accent);
+  color: var(--accent-foreground);
 }
 
 .delete-button:hover,
@@ -287,10 +298,155 @@ body {
   color: var(--destructive);
 }
 
-.page-footer {
-  margin-top: var(--space-lg);
+.task-schedule {
+  display: flex;
+  grid-column: 2 / -1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs) var(--space-lg);
+  min-width: 0;
+  padding-bottom: var(--space-md);
   color: var(--muted-foreground);
   font-size: var(--text-note);
+}
+
+.schedule-label,
+.task-countdown,
+.countdown-value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.task-countdown {
+  flex-wrap: wrap;
+}
+
+.countdown-value {
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-control);
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown-value[data-expired="true"] {
+  background: var(--destructive-soft);
+  color: var(--destructive);
+}
+
+.countdown-status:empty {
+  position: absolute;
+}
+
+.schedule-editor {
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--muted);
+}
+
+.schedule-fields,
+.schedule-duration {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.schedule-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.schedule-duration {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.schedule-fields label,
+.schedule-fields fieldset {
+  min-width: 0;
+  color: var(--foreground);
+  font-size: var(--text-note);
+  font-weight: 600;
+}
+
+.schedule-fields legend {
+  margin-bottom: var(--space-xs);
+}
+
+.schedule-fields input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-size);
+  margin-top: var(--space-xs);
+  padding-inline: var(--space-sm);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--card);
+  color: var(--foreground);
+  font-size: var(--text-base);
+  font-weight: 400;
+}
+
+.duration-field {
+  position: relative;
+}
+
+.duration-field input {
+  margin-top: 0;
+  padding-inline-end: var(--space-3xl);
+  appearance: textfield;
+}
+
+.duration-field input::-webkit-inner-spin-button,
+.duration-field input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.duration-field span {
+  position: absolute;
+  inset-inline-end: var(--space-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+  font-weight: 400;
+  pointer-events: none;
+}
+
+.schedule-actions,
+.schedule-actions > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.schedule-actions {
+  justify-content: space-between;
+  margin-top: var(--space-md);
+  color: var(--muted-foreground);
+  font-size: var(--text-note);
+}
+
+.schedule-actions button {
+  min-height: var(--control-size);
+}
+
+.schedule-error {
+  margin-top: var(--space-sm);
+  color: var(--destructive);
+  font-size: var(--text-note);
+}
+
+@media (max-width: 640px) {
+  .schedule-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .schedule-fields fieldset {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 480px) {
@@ -309,9 +465,16 @@ body {
     margin-top: var(--space-xs);
   }
 
-  .task-form,
-  .task-row {
+  .task-form {
     gap: var(--space-sm);
+  }
+
+  .task-row-main {
+    column-gap: var(--space-xs);
+  }
+
+  .schedule-fields {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .filter-item {

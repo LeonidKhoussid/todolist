@@ -1,7 +1,11 @@
+import { isTaskSchedule } from "./task-schedule";
+import type { TaskSchedule } from "./task-schedule";
+
 export type Task = {
   id: string;
   title: string;
   completed: boolean;
+  schedule?: TaskSchedule;
 };
 
 const storageKey = "spisok-zadach:tasks";
@@ -15,7 +19,8 @@ function isTask(value: unknown): value is Task {
     "title" in value &&
     typeof value.title === "string" &&
     "completed" in value &&
-    typeof value.completed === "boolean"
+    typeof value.completed === "boolean" &&
+    (!("schedule" in value) || isTaskSchedule(value.schedule))
   );
 }
 

@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { ListChecks, Plus, Trash2 } from "lucide-react";
+import { ListChecks, Plus } from "lucide-react";
 import { Button } from "../components/ui/button";
-import { Checkbox } from "../components/ui/checkbox";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../components/ui/empty";
 import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
+import { TaskRow } from "./task-row";
 import { loadTasks, saveTasks } from "./task-storage";
 import type { Task } from "./task-storage";
 
@@ -90,11 +90,13 @@ export function TaskList() {
     );
   }
 
-  function setTaskCompleted(taskId: string, completed: boolean) {
-    if (tasks === null) return;
+  function updateTask(taskId: string, changes: Partial<Pick<Task, "completed" | "schedule">>) {
+    if (tasks === null) return false;
+    return updateTasks(tasks.map((task) => task.id === taskId ? { ...task, ...changes } : task));
+  }
 
-    const nextTasks = tasks.map((task) => task.id === taskId ? { ...task, completed } : task);
-    const saved = updateTasks(nextTasks);
+  function setTaskCompleted(taskId: string, completed: boolean) {
+    const saved = updateTask(taskId, { completed });
     if (saved && filter !== "all" && document.activeElement?.matches(":focus-visible")) {
       inputRef.current?.focus();
     }
@@ -207,34 +209,16 @@ export function TaskList() {
 
         {visibleTasks && visibleTasks.length > 0 && (
           <ul className="task-list" role="list">
-            {visibleTasks.map((task) => {
-              const checkboxId = `task-${task.id}`;
-              return (
-                <li
-                  key={task.id}
-                  className="task-row"
-                  ref={(row) => animateNewTask(row, task.id)}
-                >
-                  <Checkbox
-                    className="task-checkbox"
-                    id={checkboxId}
-                    checked={task.completed}
-                    onCheckedChange={(checked) => setTaskCompleted(task.id, checked === true)}
-                  />
-                  <label className="task-title" htmlFor={checkboxId}>{task.title}</label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="delete-button"
-                    aria-label={`Удалить задачу: ${task.title}`}
-                    onClick={(event) => deleteTask(task.id, event.detail === 0)}
-                  >
-                    <Trash2 aria-hidden="true" />
-                  </Button>
-                </li>
-              );
-            })}
+            {visibleTasks.map((task) => (
+              <TaskRow
+                key={task.id}
+                task={task}
+                rowRef={(row) => animateNewTask(row, task.id)}
+                onCompletedChange={(completed) => setTaskCompleted(task.id, completed)}
+                onScheduleChange={(schedule) => updateTask(task.id, { schedule })}
+                onDelete={(fromKeyboard) => deleteTask(task.id, fromKeyboard)}
+              />
+            ))}
           </ul>
         )}
       </section>
