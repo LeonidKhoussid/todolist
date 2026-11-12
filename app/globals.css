@@ -251,6 +251,7 @@ body {
   padding: var(--space-sm) var(--panel-gutter);
   border-block: 1px solid var(--border);
   background: var(--muted);
+  scroll-margin-top: var(--space-lg);
 }
 
 .filter-item {
@@ -294,6 +295,113 @@ body {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.task-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs) var(--space-md);
+  padding: var(--space-md) var(--panel-gutter);
+  border-top: 1px solid var(--border);
+}
+
+.gooey-pagination {
+  --page-step: 26px;
+  --current-dot-size: 14px;
+
+  display: flex;
+  align-items: center;
+  max-inline-size: 100%;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--muted);
+}
+
+.gooey-arrow {
+  display: grid;
+  flex: 0 0 var(--control-size);
+  place-items: center;
+  height: var(--control-size);
+  border-radius: 50%;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.gooey-arrow:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.gooey-arrow:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.gooey-scroll {
+  min-inline-size: 0;
+  max-inline-size: calc(7 * var(--page-step));
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+}
+
+.gooey-track,
+.gooey-dots {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--page-step);
+  align-items: center;
+}
+
+.gooey-track {
+  position: relative;
+  width: max-content;
+}
+
+.gooey-filter,
+.gooey-dots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.gooey-dot {
+  justify-self: center;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--input);
+}
+
+.gooey-current-dot {
+  position: absolute;
+  top: 50%;
+  left: calc((var(--page-step) - var(--current-dot-size)) / 2);
+  width: var(--current-dot-size);
+  height: var(--current-dot-size);
+  border-radius: 50%;
+  background: var(--primary);
+  transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.gooey-page-button {
+  position: relative;
+  height: var(--control-size);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+
+.gooey-page-button:focus-visible {
+  outline-offset: -4px;
+}
+
+.pagination-count {
+  color: var(--muted-foreground);
+  font-size: var(--text-note);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .task-row {
@@ -614,6 +722,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .completion-fill,
+  .gooey-current-dot,
   .theme-toggle-thumb,
   [data-slot="button"],
   [data-slot="checkbox"],
@@ -623,6 +732,20 @@ body {
 }
 
 @media (forced-colors: active) {
+  .gooey-pagination {
+    border-color: ButtonText;
+  }
+
+  .gooey-dot,
+  .gooey-current-dot {
+    forced-color-adjust: none;
+    background: ButtonText;
+  }
+
+  .gooey-current-dot {
+    background: Highlight;
+  }
+
   .completion-rule {
     height: var(--space-xs);
   }

@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import { ListChecks, Plus } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../components/ui/empty";
+import { GooeyPagination } from "../components/ui/gooey-pagination";
 import { ThemeToggle } from "../components/ui/theme-toggle";
 import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import { TaskRow } from "./task-row";
@@ -18,6 +19,17 @@ const taskFilters = [
 ] as const;
 
 type TaskFilter = (typeof taskFilters)[number]["value"];
+
+const tasksPerPage = 5;
+
+function filterTasks(tasks: Task[], filter: TaskFilter) {
+  if (filter === "all") return tasks;
+  return tasks.filter((task) => task.completed === (filter === "completed"));
+}
+
+function countPages(taskCount: number) {
+  return Math.max(1, Math.ceil(taskCount / tasksPerPage));
+}
 
 const emptyStates = {
   all: {
@@ -38,8 +50,10 @@ export function TaskList() {
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [draft, setDraft] = useState("");
   const [filter, setFilter] = useState<TaskFilter>("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const [storageError, setStorageError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const listStartRef = useRef<HTMLDivElement>(null);
   const taskToAnimate = useRef<string | null>(null);
 
   useEffect(() => {
@@ -54,6 +68,8 @@ export function TaskList() {
     try {
       saveTasks(nextTasks);
       setTasks(nextTasks);
+      const lastPage = countPages(filterTasks(nextTasks, filter).length);
+      setCurrentPage((page) => Math.min(page, lastPage));
       setStorageError("");
       return true;
     } catch {
@@ -71,6 +87,7 @@ export function TaskList() {
     if (updateTasks([task, ...tasks])) {
       taskToAnimate.current = task.id;
       setDraft("");
+      setCurrentPage(1);
       if (filter === "completed") setFilter("active");
       inputRef.current?.focus();
     }
@@ -112,7 +129,20 @@ export function TaskList() {
 
   function changeFilter(value: string) {
     const selectedFilter = taskFilters.find((option) => option.value === value);
-    if (selectedFilter) setFilter(selectedFilter.value);
+    if (!selectedFilter || selectedFilter.value === filter) return;
+    setFilter(selectedFilter.value);
+    setCurrentPage(1);
+  }
+
+  function changePage(nextPage: number) {
+    if (nextPage === currentPage) return;
+    setCurrentPage(nextPage);
+
+    const listStart = listStartRef.current;
+    if (listStart && listStart.getBoundingClientRect().top < 0) {
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      listStart.scrollIntoView({ block: "start", behavior: reduceMotion ? "instant" : "smooth" });
+    }
   }
 
   const completedCount = tasks?.filter((task) => task.completed).length ?? 0;
@@ -122,10 +152,10 @@ export function TaskList() {
     completed: completedCount,
   };
   const completionRatio = counts.all > 0 ? completedCount / counts.all : 0;
-  const visibleTasks = tasks?.filter((task) => {
-    if (filter === "all") return true;
-    return task.completed === (filter === "completed");
-  });
+  const visibleTasks = tasks && filterTasks(tasks, filter);
+  const totalPages = countPages(visibleTasks?.length ?? 0);
+  const pageStart = (currentPage - 1) * tasksPerPage;
+  const pageTasks = visibleTasks?.slice(pageStart, pageStart + tasksPerPage);
   const emptyState = emptyStates[filter];
 
   return (
@@ -175,7 +205,7 @@ export function TaskList() {
 
         <p className="storage-error" role="alert">{storageError}</p>
 
-        <div className="filter-toolbar">
+        <div className="filter-toolbar" ref={listStartRef}>
           <ToggleGroup
             type="single"
             role="radiogroup"
@@ -209,9 +239,9 @@ export function TaskList() {
           </Empty>
         )}
 
-        {visibleTasks && visibleTasks.length > 0 && (
+        {pageTasks && pageTasks.length > 0 && (
           <ul className="task-list" role="list">
-            {visibleTasks.map((task) => (
+            {pageTasks.map((task) => (
               <TaskRow
                 key={task.id}
                 task={task}
@@ -222,6 +252,10 @@ export function TaskList() {
               />
             ))}
           </ul>
+        )}
+
+        {totalPages > 1 && (
+          <GooeyPagination currentPage={currentPage} totalPages={totalPages} onPageChange={changePage} />
         )}
       </section>
     </>
