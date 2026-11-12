@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import { ListChecks, Plus } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../components/ui/empty";
+import { ThemeToggle } from "../components/ui/theme-toggle";
 import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import { TaskRow } from "./task-row";
 import { loadTasks, saveTasks } from "./task-storage";
@@ -134,6 +135,7 @@ export function TaskList() {
         <p className="completion-count" aria-live="polite" aria-atomic="true">
           Выполнено <span>{tasks ? `${completedCount} из ${counts.all}` : "—"}</span>
         </p>
+        <ThemeToggle />
         <div className="completion-rule">
           <progress
             aria-label="Выполнение задач"

@@ -14,6 +14,8 @@
   --ring: var(--primary);
   --destructive: oklch(46% 0.16 25);
   --destructive-soft: oklch(95% 0.022 25);
+  --theme-toggle-track: var(--card);
+  --theme-toggle-thumb: var(--accent);
 
   --font-body: "Inter Variable", system-ui, sans-serif;
   --font-display: "Rubik Variable", var(--font-body);
@@ -32,4 +34,23 @@
   --control-size: 44px;
   --radius-control: 8px;
   --radius-panel: 14px;
+}
+
+.dark {
+  --background: oklch(19% 0.027 255);
+  --card: oklch(23% 0.033 255);
+  --foreground: oklch(95% 0.012 254);
+  --muted: oklch(27% 0.038 255);
+  --muted-foreground: oklch(76% 0.035 255);
+  --border: oklch(37% 0.045 255);
+  --input: oklch(60% 0.046 255);
+  --primary: oklch(75% 0.143 253);
+  --primary-hover: oklch(81% 0.132 253);
+  --primary-foreground: oklch(20% 0.051 255);
+  --accent: oklch(33% 0.061 255);
+  --accent-foreground: oklch(87% 0.08 252);
+  --destructive: oklch(82% 0.113 25);
+  --destructive-soft: oklch(30% 0.058 25);
+  --theme-toggle-track: oklch(14.5% 0.015 255);
+  --theme-toggle-thumb: oklch(28% 0.027 255);
 }
