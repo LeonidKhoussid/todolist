@@ -59,26 +59,39 @@ export function TaskList() {
   const completedCount = tasks?.filter((task) => task.completed).length ?? 0;
 
   return (
-    <div className="workspace-grid">
-      <section className="task-panel" aria-label="Задачи">
+    <>
+      <header className="list-header">
+        <h1>Список задач</h1>
+        <p className="completion-count" aria-live="polite" aria-atomic="true">
+          Выполнено <span>{tasks ? `${completedCount} из ${tasks.length}` : "—"}</span>
+        </p>
+        <progress
+          className="completion-rule"
+          aria-label="Выполнение задач"
+          max={Math.max(tasks?.length ?? 0, 1)}
+          value={completedCount}
+        />
+      </header>
+
+      <section aria-label="Задачи">
         <form className="task-form" onSubmit={addTask}>
-          <label htmlFor="task-title">Новая задача</label>
-          <div className="task-entry">
-            <input
-              ref={inputRef}
-              id="task-title"
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder="Что сделать?"
-              autoComplete="off"
-              maxLength={240}
-              disabled={tasks === null}
-            />
-            <button className="add-button" type="submit" disabled={tasks === null || !draft.trim()}>
-              <span className="plus-mark" aria-hidden="true">+</span>
-              Добавить
-            </button>
-          </div>
+          <label className="entry-mark" htmlFor="task-title">
+            <span aria-hidden="true">+</span>
+            <span className="visually-hidden">Новая задача</span>
+          </label>
+          <input
+            ref={inputRef}
+            id="task-title"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder="Что сделать?"
+            autoComplete="off"
+            maxLength={240}
+            disabled={tasks === null}
+          />
+          <button className="add-button" type="submit" disabled={tasks === null || !draft.trim()}>
+            Добавить
+          </button>
         </form>
 
         <p className="storage-error" role="alert">{storageError}</p>
@@ -89,7 +102,6 @@ export function TaskList() {
 
         {tasks?.length === 0 && (
           <div className="empty-state">
-            <span className="empty-mark" aria-hidden="true" />
             <h2>Список пока пуст</h2>
             <p>Добавьте первую задачу, чтобы начать.</p>
           </div>
@@ -120,19 +132,6 @@ export function TaskList() {
           </ul>
         )}
       </section>
-
-      <aside className="progress-panel" aria-labelledby="progress-heading">
-        <h2 id="progress-heading">Выполнено</h2>
-        <p className="progress-count" aria-live="polite" aria-atomic="true">
-          <span>{tasks === null ? "—" : completedCount}</span>{" "}
-          {tasks && <span>из {tasks.length}</span>}
-        </p>
-        <progress
-          aria-label="Выполнение задач"
-          max={Math.max(tasks?.length ?? 0, 1)}
-          value={completedCount}
-        />
-      </aside>
-    </div>
+    </>
   );
 }
