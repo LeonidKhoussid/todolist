@@ -35,6 +35,11 @@ body {
   font: 400 var(--text-base) / 1.5 var(--font-body);
 }
 
+/* Keep Next.js route announcements outside the painted page. */
+next-route-announcer {
+  clip-path: inset(50%);
+}
+
 :focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
