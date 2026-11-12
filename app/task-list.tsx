@@ -2,12 +2,41 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import { ListChecks, Plus, Trash2 } from "lucide-react";
+import { Button } from "../components/ui/button";
+import { Checkbox } from "../components/ui/checkbox";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../components/ui/empty";
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import { loadTasks, saveTasks } from "./task-storage";
 import type { Task } from "./task-storage";
+
+const taskFilters = [
+  { value: "all", label: "Все" },
+  { value: "active", label: "В работе" },
+  { value: "completed", label: "Готово" },
+] as const;
+
+type TaskFilter = (typeof taskFilters)[number]["value"];
+
+const emptyStates = {
+  all: {
+    title: "Список пока пуст",
+    description: "Добавьте первую задачу в поле выше.",
+  },
+  active: {
+    title: "Нет задач в работе",
+    description: "Добавьте новую задачу или верните выполненную в работу.",
+  },
+  completed: {
+    title: "Пока нет выполненных задач",
+    description: "Отметьте задачу выполненной, чтобы увидеть её здесь.",
+  },
+};
 
 export function TaskList() {
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [draft, setDraft] = useState("");
+  const [filter, setFilter] = useState<TaskFilter>("all");
   const [storageError, setStorageError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -39,6 +68,7 @@ export function TaskList() {
     const task: Task = { id: crypto.randomUUID(), title, completed: false };
     if (updateTasks([task, ...tasks])) {
       setDraft("");
+      if (filter === "completed") setFilter("active");
       inputRef.current?.focus();
     }
   }
@@ -46,7 +76,11 @@ export function TaskList() {
   function setTaskCompleted(taskId: string, completed: boolean) {
     if (tasks === null) return;
 
-    updateTasks(tasks.map((task) => task.id === taskId ? { ...task, completed } : task));
+    const nextTasks = tasks.map((task) => task.id === taskId ? { ...task, completed } : task);
+    const saved = updateTasks(nextTasks);
+    if (saved && filter !== "all" && document.activeElement?.matches(":focus-visible")) {
+      inputRef.current?.focus();
+    }
   }
 
   function deleteTask(taskId: string, fromKeyboard: boolean) {
@@ -56,79 +90,123 @@ export function TaskList() {
     if (deleted && fromKeyboard) inputRef.current?.focus();
   }
 
+  function changeFilter(value: string) {
+    const selectedFilter = taskFilters.find((option) => option.value === value);
+    if (selectedFilter) setFilter(selectedFilter.value);
+  }
+
   const completedCount = tasks?.filter((task) => task.completed).length ?? 0;
+  const counts = {
+    all: tasks?.length ?? 0,
+    active: (tasks?.length ?? 0) - completedCount,
+    completed: completedCount,
+  };
+  const visibleTasks = tasks?.filter((task) => {
+    if (filter === "all") return true;
+    return task.completed === (filter === "completed");
+  });
+  const emptyState = emptyStates[filter];
 
   return (
     <>
       <header className="list-header">
         <h1>Список задач</h1>
         <p className="completion-count" aria-live="polite" aria-atomic="true">
-          Выполнено <span>{tasks ? `${completedCount} из ${tasks.length}` : "—"}</span>
+          Выполнено <span>{tasks ? `${completedCount} из ${counts.all}` : "—"}</span>
         </p>
         <progress
           className="completion-rule"
           aria-label="Выполнение задач"
-          max={Math.max(tasks?.length ?? 0, 1)}
+          max={Math.max(counts.all, 1)}
           value={completedCount}
         />
       </header>
 
-      <section aria-label="Задачи">
+      <section className="task-panel" aria-label="Задачи">
         <form className="task-form" onSubmit={addTask}>
-          <label className="entry-mark" htmlFor="task-title">
-            <span aria-hidden="true">+</span>
-            <span className="visually-hidden">Новая задача</span>
-          </label>
-          <input
-            ref={inputRef}
-            id="task-title"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder="Что сделать?"
-            autoComplete="off"
-            maxLength={240}
-            disabled={tasks === null}
-          />
-          <button className="add-button" type="submit" disabled={tasks === null || !draft.trim()}>
+          <div className="task-entry">
+            <label className="entry-mark" htmlFor="task-title">
+              <Plus aria-hidden="true" size={18} />
+              <span className="visually-hidden">Новая задача</span>
+            </label>
+            <input
+              ref={inputRef}
+              id="task-title"
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder="Что сделать?"
+              autoComplete="off"
+              maxLength={240}
+              disabled={tasks === null}
+            />
+          </div>
+          <Button className="add-button" type="submit" disabled={tasks === null || !draft.trim()}>
             Добавить
-          </button>
+          </Button>
         </form>
 
         <p className="storage-error" role="alert">{storageError}</p>
+
+        <div className="filter-toolbar">
+          <ToggleGroup
+            type="single"
+            role="radiogroup"
+            value={filter}
+            onValueChange={changeFilter}
+            aria-label="Фильтр задач"
+            spacing={1}
+          >
+            {taskFilters.map(({ value, label }) => (
+              <ToggleGroupItem className="filter-item" key={value} value={value}>
+                {label}
+                {tasks && <span className="filter-count">{counts[value]}</span>}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </div>
 
         {tasks === null && !storageError && (
           <p className="loading-state" role="status">Загрузка задач…</p>
         )}
 
-        {tasks?.length === 0 && (
-          <div className="empty-state">
-            <h2>Список пока пуст</h2>
-            <p>Добавьте первую задачу, чтобы начать.</p>
-          </div>
+        {visibleTasks?.length === 0 && (
+          <Empty className="task-empty">
+            <EmptyHeader>
+              <EmptyMedia className="task-empty-icon" variant="icon">
+                <ListChecks aria-hidden="true" />
+              </EmptyMedia>
+              <EmptyTitle><h2>{emptyState.title}</h2></EmptyTitle>
+              <EmptyDescription>{emptyState.description}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         )}
 
-        {tasks && tasks.length > 0 && (
+        {visibleTasks && visibleTasks.length > 0 && (
           <ul className="task-list" role="list">
-            {tasks.map((task) => (
-              <li key={task.id} className="task-row">
-                <label className="task-label">
-                  <input
-                    type="checkbox"
+            {visibleTasks.map((task) => {
+              const checkboxId = `task-${task.id}`;
+              return (
+                <li key={task.id} className="task-row">
+                  <Checkbox
+                    className="task-checkbox"
+                    id={checkboxId}
                     checked={task.completed}
-                    onChange={(event) => setTaskCompleted(task.id, event.target.checked)}
+                    onCheckedChange={(checked) => setTaskCompleted(task.id, checked === true)}
                   />
-                  <span className="task-title">{task.title}</span>
-                </label>
-                <button
-                  type="button"
-                  className="delete-button"
-                  aria-label={`Удалить задачу: ${task.title}`}
-                  onClick={(event) => deleteTask(task.id, event.detail === 0)}
-                >
-                  <span className="delete-mark" aria-hidden="true" />
-                </button>
-              </li>
-            ))}
+                  <label className="task-title" htmlFor={checkboxId}>{task.title}</label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="delete-button"
+                    aria-label={`Удалить задачу: ${task.title}`}
+                    onClick={(event) => deleteTask(task.id, event.detail === 0)}
+                  >
+                    <Trash2 aria-hidden="true" />
+                  </Button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
