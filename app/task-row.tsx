@@ -3,6 +3,7 @@ import { CalendarClock, CalendarDays, Clock3, Pause, Play, RotateCcw, Timer, Tra
 import { Button } from "../components/ui/button";
 import { Checkbox } from "../components/ui/checkbox";
 import { TaskScheduleEditor } from "./task-schedule-editor";
+import type { ScheduleSection } from "./task-schedule-editor";
 import { createTimer, formatCountdown, formatTaskDate, getRemainingTime } from "./task-schedule";
 import type { TaskSchedule, TaskTimer } from "./task-schedule";
 import type { Task } from "./task-storage";
@@ -16,14 +17,17 @@ type TaskRowProps = {
 };
 
 export function TaskRow({ task, onCompletedChange, onScheduleChange, onDelete, rowRef }: TaskRowProps) {
-  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorSection, setEditorSection] = useState<ScheduleSection | null>(null);
   const editorId = useId();
   const scheduleButtonRef = useRef<HTMLButtonElement>(null);
   const checkboxId = `task-${task.id}`;
   const schedule = task.schedule;
+  const displayDate = schedule?.date ? formatTaskDate(schedule.date) : "";
+  const editorOpen = editorSection !== null;
+  const defaultSection = schedule?.date ? "date" : schedule?.time ? "time" : schedule?.timer ? "timer" : "date";
 
   function closeEditor() {
-    setEditorOpen(false);
+    setEditorSection(null);
     scheduleButtonRef.current?.focus();
   }
 
@@ -51,7 +55,7 @@ export function TaskRow({ task, onCompletedChange, onScheduleChange, onDelete, r
           aria-label={`Дата, время и таймер: ${task.title}`}
           aria-expanded={editorOpen}
           aria-controls={editorOpen ? editorId : undefined}
-          onClick={() => setEditorOpen((open) => !open)}
+          onClick={() => setEditorSection(editorOpen ? null : defaultSection)}
         >
           <CalendarClock aria-hidden="true" />
         </Button>
@@ -69,16 +73,22 @@ export function TaskRow({ task, onCompletedChange, onScheduleChange, onDelete, r
         {schedule && (
           <div className="task-schedule">
             {schedule.date && (
-              <span className="schedule-label">
+              <Button type="button" variant="ghost" className="schedule-label"
+                aria-label={`Изменить дату: ${displayDate}`}
+                aria-expanded={editorSection === "date"} aria-controls={editorOpen ? editorId : undefined}
+                onClick={() => setEditorSection("date")}>
                 <CalendarDays aria-hidden="true" size={15} />
-                <time dateTime={schedule.date}>{formatTaskDate(schedule.date)}</time>
-              </span>
+                <time dateTime={schedule.date}>{displayDate}</time>
+              </Button>
             )}
             {schedule.time && (
-              <span className="schedule-label">
+              <Button type="button" variant="ghost" className="schedule-label"
+                aria-label={`Изменить время: ${schedule.time}`}
+                aria-expanded={editorSection === "time"} aria-controls={editorOpen ? editorId : undefined}
+                onClick={() => setEditorSection("time")}>
                 <Clock3 aria-hidden="true" size={15} />
                 <time dateTime={schedule.time}>{schedule.time}</time>
-              </span>
+              </Button>
             )}
             {schedule.timer && (
               <TaskCountdown
@@ -89,8 +99,15 @@ export function TaskRow({ task, onCompletedChange, onScheduleChange, onDelete, r
           </div>
         )}
       </div>
-      {editorOpen && (
-        <TaskScheduleEditor id={editorId} schedule={schedule} onSave={saveSchedule} onCancel={closeEditor} />
+      {editorSection && (
+        <TaskScheduleEditor
+          id={editorId}
+          schedule={schedule}
+          section={editorSection}
+          onSectionChange={setEditorSection}
+          onSave={saveSchedule}
+          onCancel={closeEditor}
+        />
       )}
     </li>
   );

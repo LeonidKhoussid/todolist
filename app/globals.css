@@ -372,6 +372,19 @@ body {
   gap: var(--space-xs);
 }
 
+.schedule-label {
+  min-height: var(--control-size);
+  padding-inline: var(--space-xs);
+  color: var(--muted-foreground);
+  font-size: var(--text-note);
+  font-weight: 500;
+}
+
+.schedule-label[aria-expanded="true"] {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
 .task-countdown {
   flex-wrap: wrap;
 }
@@ -398,36 +411,77 @@ body {
   padding: var(--space-md);
   border: 1px solid var(--border);
   border-radius: var(--radius-control);
+  background: var(--card);
+}
+
+.schedule-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-xs);
+  padding: var(--space-xs);
+  border-radius: var(--radius-control);
   background: var(--muted);
 }
 
-.schedule-fields,
+.schedule-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-height: var(--control-size);
+  border-radius: var(--radius-control);
+  color: var(--muted-foreground);
+  font-size: var(--text-note);
+  font-weight: 550;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.schedule-tab[data-state="active"] {
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.schedule-tab[data-configured="true"] svg {
+  color: var(--primary);
+}
+
+.schedule-section:not([hidden]) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: end;
+  gap: var(--space-md);
+  padding-block: var(--space-lg);
+}
+
+.schedule-field-group,
 .schedule-duration {
   display: grid;
   gap: var(--space-sm);
 }
 
-.schedule-fields {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.schedule-field-group {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
 }
 
 .schedule-duration {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.schedule-fields label,
-.schedule-fields fieldset {
+.schedule-field,
+.schedule-presets {
   min-width: 0;
   color: var(--foreground);
   font-size: var(--text-note);
   font-weight: 600;
 }
 
-.schedule-fields legend {
+.schedule-field legend {
   margin-bottom: var(--space-xs);
 }
 
-.schedule-fields input {
+.schedule-field input {
   display: block;
   width: 100%;
   min-width: 0;
@@ -440,6 +494,32 @@ body {
   color: var(--foreground);
   font-size: var(--text-base);
   font-weight: 400;
+}
+
+.schedule-clear {
+  width: var(--control-size);
+  min-height: var(--control-size);
+  color: var(--muted-foreground);
+}
+
+.schedule-presets-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
+.schedule-preset {
+  min-height: var(--control-size);
+  padding-inline: var(--space-sm);
+  border-color: var(--border);
+  font-size: var(--text-note);
+}
+
+.schedule-preset[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: var(--accent);
+  color: var(--accent-foreground);
 }
 
 .duration-field {
@@ -468,19 +548,13 @@ body {
   pointer-events: none;
 }
 
-.schedule-actions,
-.schedule-actions > div {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
 .schedule-actions {
-  justify-content: space-between;
-  margin-top: var(--space-md);
-  color: var(--muted-foreground);
-  font-size: var(--text-note);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border);
 }
 
 .schedule-actions button {
@@ -488,18 +562,14 @@ body {
 }
 
 .schedule-error {
-  margin-top: var(--space-sm);
+  margin-bottom: var(--space-sm);
   color: var(--destructive);
   font-size: var(--text-note);
 }
 
 @media (max-width: 640px) {
-  .schedule-fields {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .schedule-fields fieldset {
-    grid-column: 1 / -1;
+  .schedule-section:not([hidden]) {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -535,10 +605,6 @@ body {
 
   .task-row-main {
     column-gap: var(--space-xs);
-  }
-
-  .schedule-fields {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .filter-item {
